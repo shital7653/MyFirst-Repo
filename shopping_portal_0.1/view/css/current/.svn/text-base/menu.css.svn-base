@@ -1,0 +1,22 @@
+#menu ul{
+	float:left;
+	width: 200px;
+}
+
+#menu ul li{
+	display:block;
+	background-color:#0b75b2;
+}
+
+#menu ul li a{ 
+	text-decoration: none;
+	
+}
+
+#menu ul li a:visited{
+
+}
+
+#menu ul li:hover, #menu ul li .current{
+	background-color:#BEF7F5; 
+}

@@ -1,0 +1,34 @@
+@import url("menu.css");
+#header{
+	text-align:center;
+	font-size:3em;
+	width:100%;
+	height:150px;
+	background-color:#BEF7F5;
+}
+#menu{
+	float:left;
+}
+#content{
+	margin-left:250px;
+}
+#footer{
+	width:100%;
+	visibility:hidden;
+	text-align:center;
+}
+#user{
+	float:right;
+	margin-top:65px;
+	font-size:15px;
+}
+table{
+	width:100%;
+}
+td{
+	text-align:left;
+}
+tr{
+	height:60px;
+}
+

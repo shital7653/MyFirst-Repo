@@ -1,0 +1,15 @@
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_insert_user`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_insert_user`(p_username VARCHAR(50), p_password VARCHAR(200), p_fname VARCHAR(50), p_lname VARCHAR(50)
+	, p_sec_question VARCHAR(200), p_sec_ans VARCHAR(200), p_email VARCHAR(100), p_phone INT, p_dob DATE)
+BEGIN
+	DECLARE exist INT(1);
+	IF f_user_exists(p_username)=1 THEN
+		SELECT '19' AS error_no,'User already exists' AS error_desc;
+	ELSE
+		INSERT INTO users VALUES (p_username, MD5(p_password),p_fname, p_lname, p_sec_question, p_sec_ans, p_email, p_phone, p_dob);
+	END IF;
+END$$
+
+DELIMITER ;

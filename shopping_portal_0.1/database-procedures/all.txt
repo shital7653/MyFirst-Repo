@@ -1,0 +1,224 @@
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS `shopping_portal`.`f_authenticate_admin`$$
+CREATE DEFINER=`root`@`localhost` FUNCTION `f_authenticate_admin`(l_username VARCHAR(50),l_password VARCHAR(50)) RETURNS int(11)
+BEGIN
+	DECLARE exist INT DEFAULT 0;
+	SELECT count(*) INTO exist FROM admin WHERE username=l_username and password=MD5(l_password);
+	RETURN exist;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS f_authenticate_user$$
+CREATE FUNCTION f_authenticate_user(l_username VARCHAR(50), l_password VARCHAR(200)) RETURNS int(11)
+BEGIN
+	DECLARE l_count INT DEFAULT 0;
+	SELECT COUNT(*) INTO l_count FROM users WHERE username = l_username and password = MD5(l_password);
+	RETURN l_count;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `f_insert_order`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `f_insert_order`(l_prod_cost DECIMAL(20,2), l_shipping_cost DECIMAL(10,2), l_order_status VARCHAR(50), l_payment_status VARCHAR(50))
+BEGIN
+	DECLARE p_order_id BIGINT;
+	START TRANSACTION;
+	INSERT INTO shopping_portal.order(total_product_cost, shipping_cost, order_status, payment_status) VALUES (l_prod_cost,l_shipping_cost,l_order_status,l_payment_status);
+	SELECT max(order_id) AS p_order_id FROM shopping_portal.order;
+	COMMIT;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS `f_reset_password`$$
+CREATE DEFINER=`root`@`localhost` FUNCTION `f_reset_password`(p_user VARCHAR(50)) RETURNS varchar(200) CHARSET latin1
+BEGIN
+	DECLARE rand_pass VARCHAR(200);
+	SELECT SUBSTRING(MD5(UUID()),1,10) INTO rand_pass;
+	UPDATE users SET password=MD5(rand_pass) WHERE username=p_user;
+	RETURN rand_pass;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS `f_user_exists`$$
+CREATE DEFINER=`root`@`localhost` FUNCTION `f_user_exists`(user_name VARCHAR(50)) RETURNS int(11)
+BEGIN
+	DECLARE count_user INT DEFAULT 0;
+	SELECT COUNT(*) INTO count_user FROM users WHERE username=user_name;
+	RETURN count_user;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS `sp_authenticate_admin`$$
+CREATE DEFINER=`root`@`localhost` FUNCTION `sp_authenticate_admin`(l_username VARCHAR(50),l_password VARCHAR(50)) RETURNS int(11)
+BEGIN
+	DECLARE exist INT DEFAULT 0;
+	SELECT count(*) INTO exist FROM admin WHERE username=l_username and password=MD5(l_password);
+	RETURN exist;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS `sp_authenticate_user`$$
+CREATE DEFINER=`root`@`localhost` FUNCTION `sp_authenticate_user`(l_username VARCHAR(50), l_password VARCHAR(200)) RETURNS int(11)
+BEGIN
+	DECLARE l_count INT DEFAULT 0;
+	SELECT COUNT(*) INTO l_count FROM users WHERE username = l_username and password = MD5(l_password);
+	RETURN l_count;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_fetch_user_data`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_fetch_user_data`(p_username VARCHAR(50))
+BEGIN
+	SELECT fname,lname,sec_question,sec_ans,email,phone,dob FROM users WHERE username = p_username;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_insert_order_item`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_insert_order_item`(l_order_id BIGINT, l_product_id BIGINT, l_quantity BIGINT, l_amount DECIMAL(20,2))
+BEGIN
+	INSERT INTO order_items(order_id, product_id,quantity,amount) VALUES(l_order_id,l_product_id,l_quantity,l_amount); 
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_insert_order`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_insert_order`(l_prod_cost DECIMAL(20,2), l_shipping_cost DECIMAL(10,2), l_order_status VARCHAR(50), l_payment_status VARCHAR(50),l_user VARCHAR(50),l_shipping_address VARCHAR(50))
+BEGIN
+	DECLARE p_order_id BIGINT;
+	START TRANSACTION;
+	INSERT INTO shopping_portal.order(total_product_cost, shipping_cost, order_status, payment_status,user,shipping_addr,datetime) VALUES (l_prod_cost,l_shipping_cost,l_order_status,l_payment_status,l_user,l_shipping_address,now());
+	SELECT max(order_id) AS p_order_id FROM shopping_portal.order;
+	COMMIT;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_insert_product`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_insert_product`(l_name VARCHAR(50),l_description VARCHAR(5000), l_price DECIMAL(22,2), l_quantity INT(10), l_image_url VARCHAR(500))
+BEGIN
+	INSERT INTO product(name,description,price,quantity,image_url) VALUES (l_name, l_description, l_price, l_quantity,l_image_url);
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_insert_user`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_insert_user`(p_username VARCHAR(50), p_password VARCHAR(200), p_fname VARCHAR(50), p_lname VARCHAR(50)
+	, p_sec_question VARCHAR(200), p_sec_ans VARCHAR(200), p_email VARCHAR(100), p_phone INT, p_dob DATE)
+BEGIN
+	DECLARE exist INT(1);
+	IF f_user_exists(p_username)=1 THEN
+		SELECT '19' AS error_no,'User already exists' AS error_desc;
+	ELSE
+		INSERT INTO users VALUES (p_username, MD5(p_password),p_fname, p_lname, p_sec_question, p_sec_ans, p_email, p_phone, p_dob);
+	END IF;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_product_detail`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_product_detail`(l_product_id BIGINT)
+BEGIN
+	SELECT name, description, price, quantity, image_url FROM products WHERE product_id=l_product_id;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_reset_password`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_reset_password`(p_uname VARCHAR(50),p_oldpass VARCHAR(200),p_newpass VARCHAR(200))
+BEGIN
+	IF f_authenticate_user(p_uname,p_oldpass) THEN
+		UPDATE users SET password=MD5(p_newpass) WHERE username=p_uname;
+	END IF;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_search_products`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_search_products`(l_search_by VARCHAR(200))
+BEGIN
+	DECLARE p_search_term VARCHAR(200) DEFAULT NULL;
+	SET p_search_term=CONCAT('%',l_search_by,'%');
+ 	SELECT product_id,name, price, image_url, quantity FROM products WHERE name LIKE p_search_term OR description LIKE p_search_term;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS sp_search_products$$
+CREATE PROCEDURE sp_search_products (l_search_by VARCHAR(200))
+BEGIN
+	DECLARE p_search_term VARCHAR(200) DEFAULT NULL;
+	SET p_search_term=CONCAT('%',l_search_by,'%');
+ 	SELECT product_id, name, price, image_url, quantity FROM products WHERE name LIKE p_search_term OR description LIKE p_search_term;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_select_order`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_select_order`(l_username VARCHAR(50))
+BEGIN
+	SELECT * FROM shopping_portal.order WHERE user=l_username;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_update_order_payment_status`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_update_order_payment_status`(l_order_id BIGINT, l_status VARCHAR(50))
+BEGIN
+	UPDATE shopping_portal.order SET payment_status=l_status WHERE order_id=l_order_id;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_update_order`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_update_order`(l_order_id BIGINT, l_prod_cost DECIMAL(20,2), l_shipping_cost DECIMAL(10,2), l_order_status VARCHAR(50), l_payment_status VARCHAR(50))
+BEGIN
+	UPDATE shopping_portal.order SET total_product_cost=l_prod_cost, shipping_cost=l_shipping_cost, order_status=l_order_status, payment_status=l_payment_status;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_update_order_status`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_update_order_status`(l_order_id BIGINT, l_status VARCHAR(50))
+BEGIN
+	UPDATE shopping_portal.order SET order_status=l_status WHERE order_id=l_order_id;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `sp_update_profile`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_update_profile`(p_uname VARCHAR(50),p_fname VARCHAR(50),p_lname VARCHAR(50)
+	, p_sec_ques VARCHAR(200), p_sec_ans VARCHAR(200), p_email VARCHAR(100), p_phone BIGINT(12),
+	 p_dob DATE)
+BEGIN
+	UPDATE users SET fname=p_fname, lname=p_lname, email=p_email, dob=p_dob, phone=p_phone, sec_question=p_sec_ques, sec_ans=p_sec_ans WHERE username=p_uname;
+END$$
+
+DELIMITER ;

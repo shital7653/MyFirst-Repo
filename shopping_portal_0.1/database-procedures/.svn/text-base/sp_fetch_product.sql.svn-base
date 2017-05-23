@@ -1,0 +1,9 @@
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS sp_fetch_products`$$
+CREATE PROCEDURE sp_fetch_products()
+BEGIN
+
+END$$
+
+DELIMITER ;
